@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Happy Birthday! ✨</title>
+    <style>
+@import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@400;600;700&display=swap');
+*{margin:0;padding:0;box-sizing:border-box;}
+body{
+    font-family:'Quicksand',sans-serif;
+    background: linear-gradient(135deg,#ffeef8 0%,#ffe5f1 25%,#ffd4e8 50%,#ffc4e1 75%,#ffb4d9 100%);
+    min-height:100vh; overflow-x:hidden; position:relative;
+}
+.container{max-width:1200px;margin:0 auto;padding:20px;position:relative; z-index:1;}
+.header{text-align:center;margin-bottom:30px;animation:fadeInDown 1s ease-out;}
+.title{font-size:3rem;font-weight:700;color:#ff69b4;text-shadow:2px 2px 4px rgba(255,182,193,0.5),0 0 20px rgba(255,105,180,0.3);margin-bottom:10px;animation:glow 2s ease-in-out infinite;}
+.subtitle{font-size:1.3rem;color:#ff8fbf;font-weight:600;}
+#canvas-container{width:100%; height:500px; background: linear-gradient(180deg, rgba(255,255,255,0.4) 0%, rgba(255,228,241,0.4) 100%);
+    border-radius:30px; box-shadow:0 10px 40px rgba(255,105,180,0.3), inset 0 0 30px rgba(255,255,255,0.5);
+    margin-bottom:30px; overflow:hidden; border:3px solid rgba(255,182,217,0.6); animation:fadeIn 1.5s ease-out;}
+#three-canvas{width:100%;height:100%;display:block;}
+.message-box{background: rgba(255,255,255,0.7); backdrop-filter:blur(10px); padding:30px; border-radius:20px; text-align:center;
+    box-shadow:0 8px 32px rgba(255,105,180,0.2); border:2px solid rgba(255,182,217,0.5); animation:fadeInUp 1.5s ease-out;}
+.birthday-message{font-size:1.5rem; color:#ff69b4; font-weight:600; margin-bottom:15px; line-height:1.6;}
+.instruction{font-size:1rem; color:#ff8fbf; font-weight:500; opacity:0.9;}
+.stars{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none; z-index:0;}
+.star{position:absolute;width:3px;height:3px;background:#fff;border-radius:50%;box-shadow:0 0 10px rgba(255,255,255,0.8),0 0 20px rgba(255,182,217,0.6);animation:twinkle 3s ease-in-out infinite;}
+.star:nth-child(1){top:20%;left:10%;animation-delay:0s;width:4px;height:4px;}
+.star:nth-child(2){top:40%;left:80%;animation-delay:0.5s;}
+.star:nth-child(3){top:60%;left:20%;animation-delay:1s;width:5px;height:5px;}
+.star:nth-child(4){top:80%;left:70%;animation-delay:1.5s;}
+.star:nth-child(5){top:30%;left:50%;animation-delay:2s;width:4px;height:4px;}
+@keyframes fadeInDown{from{opacity:0;transform:translateY(-30px);} to{opacity:1;transform:translateY(0);}}
+@keyframes fadeIn{from{opacity:0;} to{opacity:1;}}
+@keyframes fadeInUp{from{opacity:0;transform:translateY(30px);} to{opacity:1;transform:translateY(0);}}
+@keyframes glow{0%,100%{text-shadow:2px 2px 4px rgba(255,182,193,0.5),0 0 20px rgba(255,105,180,0.3);}50%{text-shadow:2px 2px 4px rgba(255,182,193,0.8),0 0 30px rgba(255,105,180,0.6),0 0 40px rgba(255,105,180,0.4);}}
+@keyframes twinkle{0%,100%{opacity:0.3; transform:scale(1);}50%{opacity:1; transform:scale(1.5);}}
+@media(max-width:768px){.title{font-size:2rem;}.subtitle{font-size:1rem;} #canvas-container{height:400px;}.birthday-message{font-size:1.2rem;}}
+@keyframes floatUp{0%{transform:translateY(0) scale(1);opacity:0.9;}100%{transform:translateY(-120vh) scale(1.6);opacity:0;}}
+@keyframes ticketFly{0%{transform:translate(0,0) scale(1);}100%{transform:translate(80vw,-20vh) scale(0.7);}}
+.ticket{position:fixed; left:50%; top:50%; transform:translate(-50%,-50%); width:250px; background:#fff; padding:20px; border-radius:15px; box-shadow:0 8px 32px rgba(0,0,0,0.2); text-align:center; z-index:10; cursor:pointer; transition:transform 2s ease;}
+.ticket.expanded{width:350px; height:auto; padding:25px;}
+</style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1 class="title">✨ Happy Birthday, Chavon Baobao! ✨</h1>
+        <p class="subtitle">A surprise gift from Kero</p>
+    </div>
+
+    <div id="canvas-container"><canvas id="three-canvas"></canvas></div>
+
+    <div class="message-box">
+        <p class="birthday-message">🌸 Wishing you the most magical birthday filled with love and joy! 🌸</p>
+    </div>
+
+    <div class="stars">
+        <div class="star"></div>
+        <div class="star"></div>
+        <div class="star"></div>
+        <div class="star"></div>
+        <div class="star"></div>
+    </div>
+</div>
+
+<audio id="bgm" src="birthday-music.mp3" preload="auto" muted></audio>
+
+<script type="importmap">
+{
+    "imports":{
+        "three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+        "three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+    }
+}
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+
+let scene,camera,renderer,controls,composer,keroModel,particles=[],bloomPass;
+
+init();
+
+function init(){
+    const canvas = document.getElementById('three-canvas');
+    const container = document.getElementById('canvas-container');
+
+    scene = new THREE.Scene();
+
+    camera = new THREE.PerspectiveCamera(45,container.clientWidth/container.clientHeight,0.1,1000);
+    camera.position.set(0,2,5);
+
+    renderer = new THREE.WebGLRenderer({canvas,antialias:true,alpha:true});
+    renderer.setSize(container.clientWidth,container.clientHeight);
+    renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.shadowMap.enabled=true;
+    renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+
+    controls = new OrbitControls(camera,renderer.domElement);
+    controls.enableDamping=true;
+    controls.dampingFactor=0.05;
+    controls.minDistance=2; controls.maxDistance=10; controls.maxPolarAngle=Math.PI/2;
+
+    scene.add(new THREE.AmbientLight(0xffffff,0.6));
+    const directionalLight = new THREE.DirectionalLight(0xffb6d9,0.8);
+    directionalLight.position.set(5,10,5); directionalLight.castShadow=true;
+    directionalLight.shadow.mapSize.width=2048; directionalLight.shadow.mapSize.height=2048;
+    scene.add(directionalLight);
+    scene.add(new THREE.PointLight(0xffc4e1,0.5,10).position.set(-3,3,2));
+    scene.add(new THREE.PointLight(0xffe5f1,0.5,10).position.set(3,3,-2));
+
+    createMagicalParticles();
+    loadKeroModel();
+
+    const renderScene = new RenderPass(scene,camera);
+    bloomPass = new UnrealBloomPass(new THREE.Vector2(container.clientWidth,container.clientHeight),0,0.9,0); // no bloom initially
+    composer = new EffectComposer(renderer);
+    composer.addPass(renderScene); composer.addPass(bloomPass);
+
+    window.addEventListener('resize',onWindowResize,false);
+    animate();
+}
+
+function loadKeroModel(){
+    const loader = new GLTFLoader();
+    loader.load('kero.glb',gltf=>{
+        keroModel=gltf.scene;
+        keroModel.traverse(c=>{if(c.isMesh){c.castShadow=true;c.receiveShadow=true;}});
+        const box = new THREE.Box3().setFromObject(keroModel);
+        const center = box.getCenter(new THREE.Vector3());
+        const size = box.getSize(new THREE.Vector3());
+        const scale = 2/Math.max(size.x,size.y,size.z);
+        keroModel.scale.multiplyScalar(scale);
+        keroModel.position.set(-center.x*scale,-center.y*scale,-center.z*scale);
+        scene.add(keroModel);
+    });
+}
+
+function createMagicalParticles(){
+    const g = new THREE.BufferGeometry(); const count=100;
+    const pos=new Float32Array(count*3);
+    for(let i=0;i<count*3;i+=3){ pos[i]=(Math.random()-0.5)*10; pos[i+1]=Math.random()*10; pos[i+2]=(Math.random()-0.5)*10; }
+    g.setAttribute('position',new THREE.BufferAttribute(pos,3));
+    const p = new THREE.PointsMaterial({color:0xffb6d9,size:0.05,transparent:true,opacity:0.6,blending:THREE.AdditiveBlending});
+    const sys = new THREE.Points(g,p); scene.add(sys); particles.push(sys);
+
+    const sg = new THREE.BufferGeometry(); const sc=50; const spos=new Float32Array(sc*3);
+    for(let i=0;i<sc*3;i+=3){ spos[i]=(Math.random()-0.5)*15; spos[i+1]=Math.random()*8+2; spos[i+2]=(Math.random()-0.5)*15; }
+    sg.setAttribute('position',new THREE.BufferAttribute(spos,3));
+    const sm = new THREE.PointsMaterial({color:0xffffff,size:0.08,transparent:true,opacity:0.8,blending:THREE.AdditiveBlending});
+    const ssys = new THREE.Points(sg,sm); scene.add(ssys); particles.push(ssys);
+}
+
+function animate(){
+    requestAnimationFrame(animate);
+    if(keroModel) keroModel.rotation.y+=0.005;
+    particles.forEach((p,i)=>{
+        p.rotation.y+=0.001*(i+1);
+        const arr = p.geometry.attributes.position.array;
+        for(let j=1;j<arr.length;j+=3) arr[j]+=Math.sin(Date.now()*0.001+j)*0.001;
+        p.geometry.attributes.position.needsUpdate=true;
+    });
+    controls.update(); composer.render();
+}
+
+function onWindowResize(){
+    const container=document.getElementById('canvas-container');
+    camera.aspect=container.clientWidth/container.clientHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(container.clientWidth,container.clientHeight);
+    composer.setSize(container.clientWidth,container.clientHeight);
+}
+
+// ----------------- CLICK START -----------------
+document.addEventListener('click',startOnce);
+function startOnce(){
+    const audio=document.getElementById('bgm'); if(audio){audio.muted=false; audio.play().catch(e=>console.log(e));}
+    startHearts(); startFireworks(); createTicket(); animateBloom();
+    document.removeEventListener('click',startOnce);
+}
+
+// BLOOM ANIMATION
+function animateBloom(){
+    const target=2.5; const speed=0.02;
+    function step(){ if(bloomPass.strength<target){bloomPass.strength+=speed; requestAnimationFrame(step);} }
+    step();
+}
+
+// HEARTS
+function startHearts(){
+    const heartContainer=document.createElement('div');
+    heartContainer.style.position='fixed'; heartContainer.style.top=0; heartContainer.style.left=0;
+    heartContainer.style.width='100vw'; heartContainer.style.height='100vh'; heartContainer.style.pointerEvents='none';
+    document.body.appendChild(heartContainer);
+    setInterval(()=>{
+        const heart=document.createElement('div'); heart.innerHTML='❤️';
+        heart.style.position='absolute'; heart.style.left=Math.random()*100+'vw';
+        heart.style.bottom='-20px'; heart.style.fontSize=(20+Math.random()*20)+'px';
+        heart.style.opacity=0.8; heart.style.transform='translateX(-50%)';
+        heart.style.animation='floatUp 3s linear forwards';
+        heartContainer.appendChild(heart);
+        setTimeout(()=>heart.remove(),3000);
+    },300);
+}
+
+// FIREWORKS
+function startFireworks(){
+    const canvas = document.createElement('canvas'); canvas.style.position='fixed'; canvas.style.top=0; canvas.style.left=0;
+    canvas.style.width='100%'; canvas.style.height='100%'; canvas.style.pointerEvents='none'; document.body.appendChild(canvas);
+    const ctx=canvas.getContext('2d'); canvas.width=window.innerWidth; canvas.height=window.innerHeight;
+    setInterval(()=>{
+        const x=Math.random()*canvas.width, y=Math.random()*canvas.height/2;
+        const colors=['#ff4f98','#ff80bf','#ffb6c1','#ffe5f1'];
+        for(let i=0;i<30;i++){
+            const angle=Math.random()*2*Math.PI, dist=Math.random()*50, color=colors[Math.floor(Math.random()*colors.length)];
+            ctx.beginPath(); ctx.moveTo(x,y); ctx.lineTo(x+dist*Math.cos(angle),y+dist*Math.sin(angle)); ctx.strokeStyle=color; ctx.lineWidth=2; ctx.stroke();
+        }
+    },500);
+}
+
+// TICKET
+function createTicket(){
+    const ticket = document.createElement('div'); ticket.className='ticket';
+    ticket.innerHTML='<h3>🎫 Return Flight to Japan!</h3><p>Dear [Chavon baobao]</p><p>From: [Deen]</p><p>Date: 2025-11-15</p>';
+    document.body.appendChild(ticket);
+
+    ticket.addEventListener('click',()=>{ ticket.classList.toggle('expanded'); });
+
+    // slow fly to right after 3s
+    setTimeout(()=>{ticket.style.animation='ticketFly 5s forwards';},3000);
+}
+</script>
+</body>
+</html>
