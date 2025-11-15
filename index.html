@@ -187,9 +187,31 @@ function startOnce(){
 }
 
 // BLOOM ANIMATION
-function animateBloom(){
-    const target=2.5; const speed=0.02;
-    function step(){ if(bloomPass.strength<target){bloomPass.strength+=speed; requestAnimationFrame(step);} }
+function animateBloom() {
+    let t = 0;
+
+    function step() {
+        t += 0.04;
+
+        // 🌟 Super-strong bloom with pulsing
+        bloomPass.strength = 1.5 + Math.sin(t * 2) * 1.4;
+        bloomPass.radius   = 0.4 + Math.sin(t * 1.1) * 0.25;
+        bloomPass.threshold = 0.08;
+
+        // 🌈 Rainbow emissive shift
+        const r = (Math.sin(t * 3) + 1) / 2;
+        const g = (Math.sin(t * 2 + 2) + 1) / 2;
+        const b = (Math.sin(t * 4 + 4) + 1) / 2;
+
+        scene.traverse(obj => {
+            if (obj.isMesh) {
+                obj.material.emissive = new THREE.Color(r, g * 0.8, b);
+                obj.material.emissiveIntensity = 0.8 + Math.sin(t * 3) * 0.6;
+            }
+        });
+
+        requestAnimationFrame(step);
+    }
     step();
 }
 
