@@ -85,6 +85,9 @@ import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 
 let scene,camera,renderer,controls,composer,keroModel,particles=[],bloomPass;
+let mixer;
+let keroActive = false;
+const clock = new THREE.Clock();  // for animations
 
 init();
 
@@ -130,16 +133,38 @@ function init(){
 
 function loadKeroModel(){
     const loader = new GLTFLoader();
-    loader.load('kero.glb',gltf=>{
-        keroModel=gltf.scene;
-        keroModel.traverse(c=>{if(c.isMesh){c.castShadow=true;c.receiveShadow=true;}});
-        const box = new THREE.Box3().setFromObject(keroModel);
-        const center = box.getCenter(new THREE.Vector3());
-        const size = box.getSize(new THREE.Vector3());
-        const scale = 2/Math.max(size.x,size.y,size.z);
-        keroModel.scale.multiplyScalar(scale);
-        keroModel.position.set(-center.x*scale,-center.y*scale,-center.z*scale);
-        scene.add(keroModel);
+    loader.load('kero.glb', gltf => {
+    keroModel = gltf.scene;
+
+    // allow shadows
+    keroModel.traverse(c => {
+        if (c.isMesh) {
+            c.castShadow = true;
+            c.receiveShadow = true;
+        }
+    });
+
+    // scale & center
+    const box = new THREE.Box3().setFromObject(keroModel);
+    const center = box.getCenter(new THREE.Vector3());
+    const size = box.getSize(new THREE.Vector3());
+    const scale = 2 / Math.max(size.x, size.y, size.z);
+
+    keroModel.scale.multiplyScalar(scale);
+    keroModel.position.set(-center.x * scale, -center.y * scale, -center.z * scale);
+    scene.add(keroModel);
+
+    // -------------------------
+    // ⭐ PLAY GLB ANIMATIONS
+    // -------------------------
+    if (gltf.animations && gltf.animations.length > 0) {
+        mixer = new THREE.AnimationMixer(keroModel);
+
+        gltf.animations.forEach(clip => {
+            const action = mixer.clipAction(clip);
+            action.play();
+        });
+    }
     });
 }
 
@@ -160,7 +185,13 @@ function createMagicalParticles(){
 
 function animate(){
     requestAnimationFrame(animate);
-    if(keroModel) keroModel.rotation.y+=0.005;
+    const delta = clock.getDelta();
+
+    if (keroActive) {
+        if (mixer) mixer.update(delta);
+        if (keroModel) keroModel.rotation.y += 0.005;
+    }
+
     particles.forEach((p,i)=>{
         p.rotation.y+=0.001*(i+1);
         const arr = p.geometry.attributes.position.array;
@@ -181,6 +212,7 @@ function onWindowResize(){
 // ----------------- CLICK START -----------------
 document.addEventListener('click',startOnce);
 function startOnce(){
+    keroActive = true;
     const audio=document.getElementById('bgm'); if(audio){audio.muted=false; audio.play().catch(e=>console.log(e));}
     startHearts(); startFireworks(); createTicket(); animateBloom();
     document.removeEventListener('click',startOnce);
@@ -255,8 +287,8 @@ function createTicket(){
 
     ticket.addEventListener('click',()=>{ ticket.classList.toggle('expanded'); });
 
-    // slow fly to right after 7s
-    setTimeout(()=>{ticket.style.animation='ticketFly 5s forwards';},7000);
+    // slow fly to right after 3s
+    setTimeout(()=>{ticket.style.animation='ticketFly 5s forwards';},3000);
 }
 </script>
 </body>
